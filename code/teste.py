@@ -6,10 +6,10 @@ stocksFabricas={} #dicionario fabrica:stock
 listaPaises=[] #lista de todos os paises
 minPrendasPais={} #dicionario pais:minPrendasRecebidas
 maxExportacoesPais={} #dicionario pais:maxPrendasExportadas
-criancasPais={} #dicionario pais:criancas
 
 listaCriancas=[] #lista de todas as criancas
 prendasCrianca={} #dicionario crianca:prendas que quer
+paisCriancas={} #dicionario crianca:pais
 
 def getInput():
     numFabricas,numPaises,numCriancas = [int(i) for i in input().split()]
@@ -28,11 +28,11 @@ def getInput():
     for t in range(numCriancas):
         fullStr = input().split()
         idCrianca = int(fullStr[0])
-        paisCrianca = int(fullStr[1])
+        idPais = int(fullStr[1])
         fabricasCrianca = fullStr[2:]
         
         listaCriancas.append(idCrianca) #adiciona a crianca à lista de criancas
-        criancasPais[idCrianca]=paisCrianca #adiciona a crianca ao pais
+        paisCriancas[idCrianca]=idPais #adiciona a crianca ao pais
         prendasCrianca[idCrianca]=fabricasCrianca #adiciona as prendas que a crianca quer
 
 def createProblem():
@@ -41,7 +41,7 @@ def createProblem():
     #VARIAVEIS DE DECISAO   
     #ligar paises às criancas
     x = LpVariable.dicts(
-    "x", [(pais,crianca) for pais in listaPaises for crianca, paisCrianca in criancasPais.items() if paisCrianca == pais], lowBound=0, cat="Integer"
+    "x", [(pais,crianca) for pais in listaPaises for crianca, paisCrianca in paisCriancas.items() if paisCrianca == pais], lowBound=0, cat="Integer"
     )
     #ligar criancas às fábricas
     y = LpVariable.dicts(
@@ -49,7 +49,7 @@ def createProblem():
     )
     
     #FUNCAO OBJETIVO
-    prob += lpSum(x[pais, crianca] for pais in listaPaises for crianca, paisCrianca in criancasPais.items() if paisCrianca == pais)
+    prob += lpSum(x[pais, crianca] for pais in listaPaises for crianca, paisCrianca in paisCriancas.items() if paisCrianca == pais)
     
     #RESTRICOES
     #1: cada fabrica nao pode produzir mais do que o seu stock
@@ -58,7 +58,7 @@ def createProblem():
         
     #2: cada pais tem de receber >=min_prendas
     for pais in listaPaises:
-        prob+= lpSum(x[pais,crianca] for crianca, paisCrianca in criancasPais.items() if paisCrianca == pais) >= minPrendasPais[pais]
+        prob+= lpSum(x[pais,crianca] for crianca, paisCrianca in paisCriancas.items() if paisCrianca == pais) >= minPrendasPais[pais]
     
     #3: cada crianca recebe ou 0 ou 1 prenda
     for crianca in listaCriancas:
@@ -66,11 +66,11 @@ def createProblem():
         
     #4: ⁠o número de prendas q uma criança recebe é igual a soma do número de prendas q cada fábrica dá a essa criança 
     for crianca in listaCriancas:
-        prob+= lpSum(y[crianca,fabrica] for fabrica in prendasCrianca[crianca])==lpSum(x[pais,crianca] for pais in listaPaises for crianca, paisCrianca in criancasPais.items() if paisCrianca == pais)
+        prob+= lpSum(y[crianca,fabrica] for fabrica in prendasCrianca[crianca])==lpSum(x[pais,crianca] for pais in listaPaises for crianca, paisCrianca in paisCriancas.items() if paisCrianca == pais)
     
     #5: ⁠o número de prendas q um país recebe é igual a soma do num de prendas q as crianças desse país recebem
     for pais in listaPaises:
-        prob+=lpSum(x[pais,crianca] for crianca, paisCrianca in criancasPais.items() if paisCrianca == pais) == lpSum(y[crianca,fabrica] for fabrica in prendasCrianca[crianca])
+        prob+=lpSum(x[pais,crianca] for crianca, paisCrianca in paisCriancas.items() if paisCrianca == pais) == lpSum(y[crianca,fabrica] for fabrica in prendasCrianca[crianca])
     
     #6: ⁠o número de prendas q uma fábrica produz é igual a soma do número de prendas q essa fábrica dá a cada criança
     for fabrica in listaFabricas:
@@ -78,7 +78,7 @@ def createProblem():
         
     #7: ⁠o conjunto de fábricas de um país n pode dar mais presentes a crianças de países diferentes do que o limite de exportação
     for pais in listaPaises:
-        prob += lpSum(y[crianca,fabrica] for crianca in listaCriancas for fabrica in listaFabricas if criancasPais[crianca]!= pais and fabrica in prendasCrianca[crianca]) <=maxExportacoesPais[pais]
+        prob += lpSum(y[crianca,fabrica] for crianca in listaCriancas for fabrica in listaFabricas if paisCriancas[crianca]!= pais and fabrica in prendasCrianca[crianca]) <=maxExportacoesPais[pais]
     
     prob.solve()
     print("Status:", prob.status)
