@@ -41,7 +41,7 @@ def createProblem():
     #VARIAVEIS DE DECISAO   
     #ligar paises às criancas
     x = LpVariable.dicts(
-    "x", [(pais,crianca) for pais in listaPaises for crianca, paisCrianca in paisCriancas.items() if paisCrianca == pais], lowBound=0, cat="Integer"
+    "x", [(pais,crianca) for pais in listaPaises for crianca, paisCrianca in paisCriancas.items() if paisCrianca == pais], lowBound=0, cat="Binary"
     )
     #ligar criancas às fábricas
     y = LpVariable.dicts(
