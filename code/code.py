@@ -24,7 +24,6 @@ x=0
 y=0
 
 def inputFabricas():
-    global numFabricas
     for n in range(numFabricas):
         idFabrica, paisFabrica, stockFabrica = [int(i) for i in input().split()]
         listaFabricas.append(idFabrica)
@@ -32,7 +31,6 @@ def inputFabricas():
         stockFabricas[idFabrica] = stockFabrica
 
 def inputPaises():
-    global numPaises
     for m in range(numPaises):
         idPais, maxExportacoes, minPrendas = [int(i) for i in input().split()]
         listaPaises.append(idPais)
@@ -40,7 +38,6 @@ def inputPaises():
         prendasPaises[idPais]=minPrendas
  
 def inputCriancas():
-    global numCriancas
     for t in range(numCriancas):
         fullStr = input().split()
         idCrianca = int(fullStr[0])
@@ -79,9 +76,9 @@ def createProblem(prob):
     for crianca in listaCriancas:
         prob += lpSum(x[pais, crianca] for pais in listaPaises if paisesCriancas[crianca]==pais) == lpSum(y[crianca,fabrica] for fabrica in fabricasCriancas[crianca])
         
-    #2: ⁠o número de prendas q um país recebe é igual a soma do num de prendas q as crianças desse país recebem
-    for pais in listaPaises:
-        prob += lpSum(x[pais,crianca] for crianca in listaCriancas if paisesCriancas[crianca]==pais) == lpSum(y[crianca,fabrica] for fabrica in fabricasCriancas[crianca])
+    ##2: ⁠o número de prendas q um país recebe é igual a soma do num de prendas q as crianças desse país recebem
+    #for pais in listaPaises:
+    #    prob += lpSum(x[pais,crianca] for crianca in listaCriancas if paisesCriancas[crianca]==pais) == lpSum(y[crianca,fabrica] for fabrica in fabricasCriancas[crianca])
     
     #3: ⁠o número de prendas q uma fábrica produz é igual a soma do número de prendas q essa fábrica dá a cada criança e é menor que o stock dela
     for fabrica in listaFabricas:
@@ -97,24 +94,25 @@ def createProblem(prob):
 
 def printSolution(prob):   
     prob.solve()
-    print("Status:", prob.status)
     if prob.status!=-1:
-        print("Distribuição de brinquedos (País -> Criança):")
-        for (pais, crianca) in x:
-            if x[pais, crianca].value() > 0:
-                print(f"País {pais} para Criança {crianca}: {x[pais, crianca].value()}")
-    
-        print("Brinquedos atribuídos às crianças (Criança -> Fábrica):")
-        for (crianca, fabrica) in y:
-            if y[crianca, fabrica].value() > 0:
-                print(f"Criança {crianca} recebe de Fábrica {fabrica}")
+        #print("Distribuição de brinquedos (País -> Criança):")
+        #for (pais, crianca) in x:
+        #    if x[pais, crianca].value() > 0:
+        #        print(f"País {pais} para Criança {crianca}: {x[pais, crianca].value()}")
+    #
+        #print("Brinquedos atribuídos às crianças (Criança -> Fábrica):")
+        #for (crianca, fabrica) in y:
+        #    if y[crianca, fabrica].value() > 0:
+        #        print(f"Criança {crianca} recebe de Fábrica {fabrica}")
         total = 0
         for pais in listaPaises:
             for crianca in listaCriancas:
                 if paisesCriancas[crianca] == pais:
                     total += x[pais, crianca].value()
     
-        print(f"Total de prendas atribuídas: {total}")
+        print(int(total))
+    else:
+        print(-1)
     
 
 def main():
