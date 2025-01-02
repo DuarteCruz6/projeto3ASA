@@ -1,4 +1,4 @@
-from pulp import LpProblem, LpMaximize, LpVariable, lpSum
+from pulp import LpProblem, LpMaximize, LpVariable, lpSum, PULP_CBC_CMD
 
 numFabricas=0 #numFabricas = n
 numPaises=0 #numPaises = m
@@ -75,35 +75,23 @@ def createProblem(prob):
     #1: ⁠o número de prendas q uma criança recebe é igual a soma do número de prendas q cada fábrica dá a essa criança
     for crianca in listaCriancas:
         prob += lpSum(x[pais, crianca] for pais in listaPaises if paisesCriancas[crianca]==pais) == lpSum(y[crianca,fabrica] for fabrica in fabricasCriancas[crianca])
-        
-    ##2: ⁠o número de prendas q um país recebe é igual a soma do num de prendas q as crianças desse país recebem
-    #for pais in listaPaises:
-    #    prob += lpSum(x[pais,crianca] for crianca in listaCriancas if paisesCriancas[crianca]==pais) == lpSum(y[crianca,fabrica] for fabrica in fabricasCriancas[crianca])
-    
-    #3: ⁠o número de prendas q uma fábrica produz é igual a soma do número de prendas q essa fábrica dá a cada criança e é menor que o stock dela
+
+    #2: ⁠o número de prendas q uma fábrica produz é igual a soma do número de prendas q essa fábrica dá a cada criança e é menor que o stock dela
     for fabrica in listaFabricas:
         prob += lpSum(y[crianca,fabrica] for crianca in listaCriancas if fabrica in fabricasCriancas[crianca]) <= stockFabricas[fabrica]
     
-    #4: ⁠o conjunto de fábricas de um país n pode dar mais presentes a crianças de países diferentes do que o limite de exportação
+    #3: ⁠o conjunto de fábricas de um país n pode dar mais presentes a crianças de países diferentes do que o limite de exportação
     for pais in listaPaises:
         prob += lpSum(y[crianca,fabrica] for crianca in listaCriancas for fabrica in fabricasCriancas[crianca] if paisesCriancas[crianca]!=pais and paisesFabricas[fabrica]==pais) <= exportacoesPaises[pais]
         
-    #5: cada país recebe no mínimo min_prendas
+    #4: cada país recebe no mínimo min_prendas
     for pais in listaPaises:
         prob += lpSum(x[pais,crianca] for crianca in listaCriancas if paisesCriancas[crianca]==pais) >= prendasPaises[pais]
 
 def printSolution(prob):   
-    prob.solve()
+    solver = PULP_CBC_CMD(msg=False)
+    prob.solve(solver)
     if prob.status!=-1:
-        #print("Distribuição de brinquedos (País -> Criança):")
-        #for (pais, crianca) in x:
-        #    if x[pais, crianca].value() > 0:
-        #        print(f"País {pais} para Criança {crianca}: {x[pais, crianca].value()}")
-    #
-        #print("Brinquedos atribuídos às crianças (Criança -> Fábrica):")
-        #for (crianca, fabrica) in y:
-        #    if y[crianca, fabrica].value() > 0:
-        #        print(f"Criança {crianca} recebe de Fábrica {fabrica}")
         total = 0
         for pais in listaPaises:
             for crianca in listaCriancas:
@@ -114,7 +102,6 @@ def printSolution(prob):
     else:
         print(-1)
     
-
 def main():
     getInput()
     prob = LpProblem("Maximizar_Brinquedos", LpMaximize)
