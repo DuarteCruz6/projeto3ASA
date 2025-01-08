@@ -1,4 +1,4 @@
-from pulp import LpProblem, LpMaximize, LpVariable, lpSum, PULP_CBC_CMD
+from pulp import LpProblem, LpMaximize, LpVariable, lpSum, PULP_CBC_CMD, value
 
 numFabricas=0 #numFabricas = n
 numPaises=0 #numPaises = m
@@ -61,7 +61,7 @@ def createProblem(prob):
     #VARIAVEIS DE DECISAO
     # Países -> Crianças que vivem no País, peso = 0 ou 1
     x = LpVariable.dicts(
-        "x", [(pais,crianca) for pais in listaPaises for crianca in listaCriancas if paisesCriancas[crianca]==pais], lowBound=0, cat="Binary"
+        "x", [(paisesCriancas[crianca],crianca) for crianca in listaCriancas], lowBound=0, cat="Binary"
     )
     # Crianças -> Fábricas que querem, peso = 0 ou 1
     y = LpVariable.dicts(
@@ -69,14 +69,14 @@ def createProblem(prob):
     )
     
     #FUNCAO OBJETIVO
-    prob += lpSum(x[pais, crianca] for pais in listaPaises for crianca in listaCriancas if paisesCriancas[crianca]==pais) #Soma das valores de crianças, que nos dará o número de crianças com prenda
+    prob += lpSum(x[paisesCriancas[crianca],crianca] for crianca in listaCriancas), "Objective" #Soma das valores de crianças, que nos dará o número de crianças com prenda
     
     #RESTRICOES
-    #1: ⁠o número de prendas q uma criança recebe é igual a soma do número de prendas q cada fábrica dá a essa criança
+    #1: ⁠o número de prendas q uma criança recebe é igual a soma do número de prendas q cada fábrica dá a essa criança 
     for crianca in listaCriancas:
-        prob += lpSum(x[pais, crianca] for pais in listaPaises if paisesCriancas[crianca]==pais) == lpSum(y[crianca,fabrica] for fabrica in fabricasCriancas[crianca])
+        prob += x[paisesCriancas[crianca], crianca] == lpSum(y[crianca,fabrica] for fabrica in fabricasCriancas[crianca])
 
-    #2: ⁠o número de prendas q uma fábrica produz é igual a soma do número de prendas q essa fábrica dá a cada criança e é menor que o stock dela
+    #2: ⁠o número de prendas q uma fábrica produz é menor que o stock dela
     for fabrica in listaFabricas:
         prob += lpSum(y[crianca,fabrica] for crianca in listaCriancas if fabrica in fabricasCriancas[crianca]) <= stockFabricas[fabrica]
     
@@ -92,13 +92,7 @@ def printSolution(prob):
     solver = PULP_CBC_CMD(msg=False)
     prob.solve(solver)
     if prob.status!=-1:
-        total = 0
-        for pais in listaPaises:
-            for crianca in listaCriancas:
-                if paisesCriancas[crianca] == pais:
-                    total += x[pais, crianca].value()
-    
-        print(int(total))
+        print(int(value(prob.objective)))
     else:
         print(-1)
     
